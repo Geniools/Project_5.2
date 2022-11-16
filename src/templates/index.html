@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Awesome app</title>
+</head>
+<body>
+
+{% if name %}
+<h1>{{ name }}</h1>
+{% else %}
+<h1>Upload your firmware file right here!</h1>
+{% endif %}
+
+<form action="/" method="post" enctype="multipart/form-data">
+    <input type="file" name="file">
+    <input type="submit" value="Upload">
+</form>
+
+</body>
+</html>

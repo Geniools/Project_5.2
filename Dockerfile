@@ -4,13 +4,16 @@ RUN apt update && apt upgrade -y
 # Install the required packages
 RUN apt install -y python3 python3-pip
 RUN pip3 install --upgrade pip
-RUN pip3 install flask
 
 # Copy the application files
 COPY . /app
 # Set the working directory
 WORKDIR /app
+
+# Install the required packages from requirements.txt
+RUN pip3 install -r requirements.txt
+
 # Expose the port
 EXPOSE 5000
 # Run the application
-CMD ["python3", "main/main.py"]
+CMD ["python3", "src/main.py"]
