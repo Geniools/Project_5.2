@@ -17,5 +17,11 @@
     <input type="submit" value="Upload">
 </form>
 
+{% if success %}
+<form action="/run" method="post">
+    <input type="submit" value="Run">
+</form>
+{% endif %}
+
 </body>
 </html>
