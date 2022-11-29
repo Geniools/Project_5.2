@@ -87,7 +87,9 @@ def indexPost():
 @app.post('/run')
 def runAppPost():
     firmware = Firmware(fileHandler.getPath())
-    firmware.emulate()
+    result = firmware.emulate()
+
+    return render_template("index.html", subject=result)
 
 
 @app.get('/run')
