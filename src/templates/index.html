@@ -6,10 +6,10 @@
 </head>
 <body>
 
-{% if name %}
-<h1>{{ name }}</h1>
+{% if subject %}
+    <h1>{{ subject }}</h1>
 {% else %}
-<h1>Upload your firmware file right here!</h1>
+    <h1>Upload your firmware file right here!</h1>
 {% endif %}
 
 <form action="/" method="post" enctype="multipart/form-data">
@@ -18,9 +18,13 @@
 </form>
 
 {% if success %}
-<form action="/run" method="post">
-    <input type="submit" value="Run">
-</form>
+    <form action="/run" method="post">
+        <input type="submit" value="Run">
+    </form>
+{% endif %}
+
+{% if firmwarePath %}
+    <p>File: {{ firmwarePath }}</p>
 {% endif %}
 
 </body>

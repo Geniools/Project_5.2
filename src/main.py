@@ -1,73 +1,98 @@
-from flask import Flask, request, escape
+from flask import Flask, request, redirect
 from flask import render_template
-from werkzeug.utils import secure_filename
-from modules.emulation.main import main as emulation
-
+from src.modules.emulation.main import Firmware
 import os
 
-# Folder where the uploaded files will be stored
-UPLOAD_FOLDER = "/app/uploads"
-# Create folder if it doesn't exist
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-# Allowed extensions for the uploaded files
-ALLOWED_EXTENSIONS = ("bin", "zip")
+from src.utils import FileHandler
+
+# Initialize the Firmware class
+fileHandler = FileHandler("/app/uploads")
+
+UPLOAD_FOLDER = fileHandler.UPLOAD_FOLDER
+
 # Initialize the Flask application
 app = Flask(__name__)
 # Configure the Flask application
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
+def getContent():
+    results = {
+        "success": False,
+        "subject": None,
+        "firmwarePath": None,
+    }
+    try:
+        results["firmwarePath"] = fileHandler.filename
+        results["subject"] = "A firmware file is already uploaded! But you can upload another one (and the old one will be deleted)."
+        results["success"] = True
+    except OSError:
+        pass
+    except Exception as e:
+        results["subject"] = "An error occured: " + str(e)
+
+    return results
+
+
 # Handle the root path (get request)
 @app.get('/')
 def indexGet():
-    return render_template("index.html")
-
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
-
-
-@app.post('/run')
-def runApp():
-    file = getFile()
-    return emulation(file)
+    results = getContent()
+    return render_template("index.html", **results)
 
 
 # Handle the POST request for the index page
 @app.post('/')
-def indexPost(name=None):
+def indexPost():
+    results = getContent()
+
     # Check if the request contains a file
     if "file" not in request.files:
-        name = "No file part"
+        results["subject"] = "No file part"
+
     file = request.files["file"]
+
     # If the user does not select a file, the browser submits an empty part without filename
     if file.filename == "":
-        name = "No selected file"
-    if file and allowed_file(file.filename.lower()):
+        results["subject"] = "No selected file"
+
+    if file and fileHandler.isAllowedExtention(file.filename.lower()):
         # Delete all the files from the upload folder
-        deleteFiles()
+        fileHandler.deleteAllFirmwareFiles()
         # Secure the filename
-        filename = secure_filename(file.filename)
+        filename = FileHandler.getSecureFilename(file.filename)
         # Save the file in the uploads folder
         file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-        name = "File uploaded"
+        # Set the filename
+        fileHandler.filename = filename
+        results["subject"] = "File uploaded"
+        results["success"] = True
+
+        try:
+            # If the file is a zip file, extract it
+            if fileHandler.isZip():
+                fileHandler.extractZip()
+                results["subject"] = "File uploaded and extracted"
+
+        except Exception as e:
+            results["subject"] = "Error: " + str(e)
+            results["success"] = False
+
     else:
-        name = "File not allowed"
-    return render_template("index.html", name=name, success=True)
+        results["subject"] = "File not allowed"
+
+    return render_template("index.html", **results)
 
 
-def deleteFiles():
-    # Delete all the files from the upload folder
-    for file in os.listdir(UPLOAD_FOLDER):
-        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], file))
+@app.post('/run')
+def runAppPost():
+    firmware = Firmware(fileHandler.getPath())
+    firmware.emulate()
 
 
-def getFile():
-    # Get the file from the upload folder
-    for file in os.listdir(UPLOAD_FOLDER):
-        return os.path.join(app.config['UPLOAD_FOLDER'], file)
+@app.get('/run')
+def runAppGet():
+    return redirect("/")
 
 
 def main():

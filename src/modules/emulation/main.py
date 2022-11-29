@@ -1,17 +1,36 @@
 # Importing fat
-from .fat.fat import run_extractor, identify_arch, make_image, infer_network, final_run
+from src.modules.emulation.fat.fat import run_extractor, identify_arch, make_image, infer_network, final_run
 
 
-def main(path):
-    image_id = run_extractor(path)
+class Firmware:
+    def __init__(self, path):
+        self._path = path
+        self._imageId = self._extract()
 
-    if image_id == "":
-        result = "Image extraction failed"
-    else:
-        arch = identify_arch(image_id)
-        make_image(arch, image_id)
-        infer_network(arch, image_id, None)
-        final_run(image_id, arch, None)
-        result = "Image extraction successful"
+    @property
+    def path(self):
+        return self._path
 
-    return result
+    @property
+    def imageId(self):
+        return self._imageId
+
+    def _extract(self):
+        image_id = run_extractor(self.path)
+        return image_id
+
+    def emulate(self):
+        if self.imageId == "":
+            result = "Image extraction failed"
+        else:
+            arch = identify_arch(self.imageId)
+            make_image(arch, self.imageId)
+            infer_network(arch, self.imageId, None)
+            final_run(self.imageId, arch, None)
+            result = "Image extraction successful"
+
+        return result
+
+    def getIpAddress(self):
+        # TODO: Get IP address from the emulator
+        pass
