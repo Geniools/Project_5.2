@@ -1,7 +1,8 @@
+from werkzeug.utils import secure_filename
+
 import os
 import shutil
 import zipfile
-from werkzeug.utils import secure_filename
 
 
 class FileHandler:
@@ -16,13 +17,12 @@ class FileHandler:
             os.makedirs(self.UPLOAD_FOLDER)
 
         # Allowed extensions for the uploaded files
-        self.ALLOWED_EXTENSIONS = ("bin", "zip", "tar")
+        self.__ALLOWED_EXTENSIONS = ("bin", "zip", "tar")
 
         self._getAvailableFirmwareFiles()
 
     def isAllowedExtention(self, filename):
-        return '.' in filename and \
-               filename.rsplit('.', 1)[1] in self.ALLOWED_EXTENSIONS
+        return '.' in filename and filename.rsplit('.', 1)[1] in self.__ALLOWED_EXTENSIONS
 
     @property
     def UPLOAD_FOLDER(self):

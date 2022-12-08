@@ -1,11 +1,13 @@
-# Importing fat
 import os
 import os.path
+import sys
 import pexpect
+import subprocess
 
 
 class Firmware:
     def __init__(self, path):
+        # The path to the file (the firmware file)
         self._path = path
 
         # Getting the path of the firmadyne directory
@@ -17,9 +19,12 @@ class Firmware:
 
         # Resetting the emulator
         self._reset()
-        self._imageId = self._extract()
-
+        self._imageId = None
         self._arch = None
+
+        # Variables used for emulation
+        self._interfaces = None
+        self._isEmulated = False
 
     @property
     def path(self):
@@ -53,11 +58,18 @@ class Firmware:
 
     def _reset(self):
         print("[+] Resetting the emulator... (FAT)")
-        child = pexpect.spawn("sudo", [self._resetFilePath], timeout=None)
+        # result = subprocess.run(["sudo", self._resetFilePath], check=True, capture_output=True)
+        # print captured output from subprocess
+        print("[+] Cleaning previous images and created files by firmadyne")
+        child = pexpect.spawn("/bin/sh", ["-c", "sudo rm -rf " + os.path.join(self.firmadynePath, "images/*.tar.gz")])
         child.sendline(self.sudoPass)
-        child.expect_exact("Go ahead and run fat.py to continue firmware analysis")
         child.expect_exact(pexpect.EOF)
-        print("[+] Emulator reset successful (FAT)")
+
+        child = pexpect.spawn("/bin/sh", ["-c", "sudo rm -rf " + os.path.join(self.firmadynePath, "scratch/*")])
+        child.sendline(self.sudoPass)
+        child.expect_exact(pexpect.EOF)
+        print("[+] All done. Go ahead and run fat.py to continue firmware analysis")
+        # print(result.stdout.decode("utf8"))
 
     def _extract(self):
         # image_id = run_extractor(self.path)
@@ -162,9 +174,17 @@ class Firmware:
         run_cmd = ["--", runsh_path]
         child = pexpect.spawn("sudo", run_cmd, cwd=self.firmadynePath)
         child.sendline(self.sudoPass)
+        # Send enter to start the emulation
+        child.sendline()
         child.interact()
 
+        child.logfile_read = sys.stdout
+        # Emulation is completed
+        self._isEmulated = True
+
     def emulate(self):
+        self._imageId = self._extract()
+
         if self.imageId == "":
             result = "Image extraction failed"
         else:
@@ -178,5 +198,7 @@ class Firmware:
         return result
 
     def getIpAddress(self):
-        # TODO: Get IP address from the emulator
-        pass
+        return self._interfaces[0]
+
+    def isEmulated(self):
+        return self._isEmulated

@@ -1,50 +1,38 @@
 from flask import Flask, request, redirect
 from flask import render_template
-from src.modules.emulation.main import Firmware
 import os
 
-from src.utils import FileHandler
+from src.modules.website.flask import WebServer
+from src.modules.website.utils import FileHandler
+from src.modules.emulation.firmware import Firmware
 
-# Initialize the Firmware class
+# Initialize the file handler
 fileHandler = FileHandler("/app/uploads")
 
-UPLOAD_FOLDER = fileHandler.UPLOAD_FOLDER
+# Initialize the firmware "handler"
+firmware = Firmware(fileHandler.getPath())
+
+# Initialize the web server (flask)
+webServer = WebServer(fileHandler, firmware, host="192.168.2.183")
 
 # Initialize the Flask application
 app = Flask(__name__)
+
 # Configure the Flask application
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-
-def getContent():
-    results = {
-        "success": False,
-        "subject": None,
-        "firmwarePath": None,
-    }
-    try:
-        results["firmwarePath"] = fileHandler.filename
-        results["subject"] = "A firmware file is already uploaded! But you can upload another one (and the old one will be deleted)."
-        results["success"] = True
-    except OSError:
-        pass
-    except Exception as e:
-        results["subject"] = "An error occured: " + str(e)
-
-    return results
+app.config['UPLOAD_FOLDER'] = fileHandler.UPLOAD_FOLDER
 
 
 # Handle the root path (get request)
 @app.get('/')
 def indexGet():
-    results = getContent()
+    results = webServer.getContent()
     return render_template("index.html", **results)
 
 
 # Handle the POST request for the index page
 @app.post('/')
 def indexPost():
-    results = getContent()
+    results = webServer.getContent()
 
     # Check if the request contains a file
     if "file" not in request.files:
@@ -86,9 +74,7 @@ def indexPost():
 
 @app.post('/run')
 def runAppPost():
-    firmware = Firmware(fileHandler.getPath())
     result = firmware.emulate()
-
     return render_template("index.html", subject=result)
 
 
@@ -98,7 +84,8 @@ def runAppGet():
 
 
 def main():
-    app.run(debug=True, host="0.0.0.0")
+    # Use reloader will reload the app when changes are made (but will run the app twice, which results often in errors)
+    app.run(debug=webServer.debug, host=webServer.host, use_reloader=False)
 
 
 if __name__ == '__main__':
