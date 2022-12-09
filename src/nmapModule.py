@@ -9,11 +9,11 @@ class Nmap:
         # IP used to scan
         self.__ip = ip
         # make object of nmap class
-        self.nmap = nmap3.NmapHostDiscovery()
+        self.__nmap = nmap3.NmapHostDiscovery()
 
     def scanPorts(self):
         # args='-p-'
-        self.__results = self.nmap.nmap_portscan_only(self.__ip)
+        self.__results = self.__nmap.nmap_portscan_only(self.__ip)
 
     def getOpenPorts(self):
         # make a list for the ports
@@ -37,11 +37,18 @@ class Nmap:
         return portsList
 
     # Getters and Setters
-    def getIP(self):
+    @property
+    def ip(self):
         return self.__ip
 
-    def setIP(self, ip):
-        self.__ip = ip
+    @ip.setter
+    def ip(self, newIp):
+        self.__ip = newIp
 
-    def getResults(self):
+    @property
+    def results(self):
         return self.__results
+
+    @property
+    def nmap(self):
+        return self.__nmap
