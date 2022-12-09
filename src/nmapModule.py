@@ -3,7 +3,7 @@ import nmap3
 
 class Nmap:
     # constructor defines IP
-    def __init__(self, ip):
+    def __init__(self, ip=None):
         # stores the results of any scan
         self.__results = None
         # IP used to scan
@@ -11,12 +11,16 @@ class Nmap:
         # make object of nmap class
         self.__nmap = nmap3.NmapHostDiscovery()
 
+    # Scans all ports available, may take half an hour
     def scanPorts(self):
-        # args='-p-'
+        self.__results = self.__nmap.nmap_portscan_only(self.__ip, args='-p-')
+
+    # Scans only top ports, takes less than a minute
+    def scanPortsLite(self):
         self.__results = self.__nmap.nmap_portscan_only(self.__ip)
 
-    def getOpenPorts(self):
-        # make a list for the ports
+    def getPorts(self):
+        # make a list for the ports and all information about them
         portsList = []
         for x in self.__results[next(iter(self.__results))]['ports']:
             ports = {
@@ -28,7 +32,7 @@ class Nmap:
         return portsList
 
     # shows only port numbers of open ports
-    def getOnlyOpenPorts(self):
+    def getOpenPorts(self):
         portsList = []
         for x in self.__results[next(iter(self.__results))]['ports']:
             if x["state"] == "open":
