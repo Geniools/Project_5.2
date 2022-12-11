@@ -1,17 +1,25 @@
-def __init__(self):
-    self.data = []
+import subprocess
 
-def run(self, id):
+class Metasploit:
+        def __init__(self, id):
+                self.id = id
 
-    cmdString = "msfconsole -q -x 'vulns -d ; db_nmap -sV --script=vulners.nse {} ; vulns ; exit'".format(id);
-    process = subprocess.run(cmdString, shell=True, capture_output=True, text=True)
-    strings = process.stdout.split('\n')
-    for line in strings:
-        if 'CVE' in line:
-            print(line)
+        def run(self):
 
+                cmdString = "msfconsole -q -x 'vulns -d ; db_nmap -sV --script=vulners.nse {} ; vulns ; exit'".format(self.id);
+                process = subprocess.run(cmdString, shell=True, capture_output=True, text=True)
+                print(process.stdout)
+                return process.stdout.split('\n')
 
+        def getVulnerabilities(self, o):
+                vulnerabilities = []
+                for line in o:
+                        if 'CVE' in line:
+                                vulnerabilities.append(line)
 
-metasploit = Metasploit()
-
-metasploit.run('192.168.178.1')
+                if len(vulnerabilities) == 0:
+                        vulnerabilities.append('No vulnerabilities were found')
+                        return vulnerabilities
+                else: 
+                        return vulnerabilities
+                    
