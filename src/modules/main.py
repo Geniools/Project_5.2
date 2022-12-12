@@ -53,40 +53,40 @@ import pexpect
 # routersploit.run()
 
 
-# class RouterSploit:
-#     def __init__(self, path):
-#         self._path = path
-#         self.routersploit_path = os.path.join(os.getcwd(), 'src/modules/routersploit')
-#         self.routersploit_log = os.path.join(self.routersploit_path, 'routersploit.log')
-#
-#         self.sudoPass = ""
-#
-#     @property
-#     def autopwn(self):
-#         return self._autopwn
-#
-#     @property
-#     def path(self):
-#         return self._path
-#
-#     def _autopwn(self):
-#         print("[+] Running the scanner....(RouterSploit)")
-#         self.run_autopwn = subprocess.run(["python", "rsf.py"], input=b"use scanners/autopwn", cwd=self.routersploit_path)
-#         child = pexpect.spawn("/bin/sh", ["use scanners/autopwn"])
-#         child.sendline(self.sudoPass)
-#         child.expect_exact(pexpect.EOF)
-#
-#         child = pexpect.spawn("/bin/sh", ["show options"], cwd=self.routersploit_path)
-#         child.sendline(self.sudoPass)
-#         print("[+] Show options")
-#         child.expect_exact(pexpect.EOF)
-#
-#     def run(self):
-#         self._autopwn()
-#
-#
-# routersploit = RouterSploit("routersploit")
-# routersploit.run()
+class RouterSploit:
+    def __init__(self, path):
+        self._path = path
+        self.routersploit_path = os.path.join(os.getcwd(), 'src/modules/routersploit')
+        self.routersploit_log = os.path.join(self.routersploit_path, 'routersploit.log')
+
+        self.sudoPass = ""
+
+    @property
+    def autopwn(self):
+        return self._autopwn
+
+    @property
+    def path(self):
+        return self._path
+
+    def _autopwn(self):
+        print("[+] Running the scanner....(RouterSploit)")
+        self.run_autopwn = subprocess.run(["python", "rsf.py"], input=b"use scanners/autopwn", cwd=self.routersploit_path)
+        child = pexpect.spawn("/bin/sh", ["use scanners/autopwn"])
+        child.sendline(self.sudoPass)
+        child.expect_exact(pexpect.EOF)
+
+        child = pexpect.spawn("/bin/sh", ["show options"], cwd=self.routersploit_path)
+        child.sendline(self.sudoPass)
+        print("[+] Show options")
+        child.expect_exact(pexpect.EOF)
+
+    def run(self):
+        self._autopwn()
+
+
+routersploit = RouterSploit("routersploit")
+routersploit.run()
 
 
 
