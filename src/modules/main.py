@@ -2,7 +2,8 @@ from subprocess import Popen, PIPE, STDOUT, run
 import os
 import subprocess
 import os.path
-import pexpect
+
+import pexpect as pexpect
 
 
 # cmd = "df -h"
@@ -56,8 +57,9 @@ import pexpect
 class RouterSploit:
     def __init__(self, path):
         self._path = path
-        self.routersploit_path = os.path.join(os.getcwd(), 'src/modules/routersploit')
-        self.routersploit_log = os.path.join(self.routersploit_path, 'routersploit.log')
+        currentFolder = os.path.dirname(os.path.realpath(__file__))
+        self._routersploitPath = os.path.join(currentFolder, 'routersploit')
+        self._routersploitLog = os.path.join(currentFolder, 'routersploit.log')
 
         self.sudoPass = ""
 
@@ -71,12 +73,12 @@ class RouterSploit:
 
     def _autopwn(self):
         print("[+] Running the scanner....(RouterSploit)")
-        self.run_autopwn = subprocess.run(["python", "rsf.py"], input=b"use scanners/autopwn", cwd=self.routersploit_path)
+        self.run_autopwn = subprocess.run(["python", "rsf.py"], input=b"use scanners/autopwn", cwd=self._routersploitPath)
         child = pexpect.spawn("/bin/sh", ["use scanners/autopwn"])
         child.sendline(self.sudoPass)
         child.expect_exact(pexpect.EOF)
 
-        child = pexpect.spawn("/bin/sh", ["show options"], cwd=self.routersploit_path)
+        child = pexpect.spawn("/bin/sh", ["show options"], cwd=self._routersploitPath)
         child.sendline(self.sudoPass)
         print("[+] Show options")
         child.expect_exact(pexpect.EOF)
