@@ -1,14 +1,5 @@
-from src.modules.emulation.firmware import Firmware
-from src.modules.website.utils import FileHandler
-
-
 class WebServer:
-    def __init__(self, fileHandler=None, firmware=None, debug=True, host="0.0.0.0"):
-        if fileHandler is None:
-            fileHandler = FileHandler("/app/uploads")
-        if firmware is None:
-            firmware = Firmware(fileHandler.getPath())
-
+    def __init__(self, fileHandler, firmware, debug=True, host="0.0.0.0"):
         # Defining web server specific variables
         self._debug = debug
         self._host = host
@@ -39,13 +30,10 @@ class WebServer:
             "subject": None,
             "firmwarePath": None,
         }
-        try:
+
+        if self.fileHandler.isFileAvailable():
             results["firmwarePath"] = self.fileHandler.filename
             results["subject"] = "A firmware file is already uploaded! But you can upload another one (and the old one will be deleted)."
             results["success"] = True
-        except OSError:
-            pass
-        except Exception as e:
-            results["subject"] = "An error occured: " + str(e)
 
         return results

@@ -6,19 +6,18 @@ import subprocess
 
 
 class Firmware:
-    def __init__(self, path):
+    def __init__(self, path=None):
         # The path to the file (the firmware file)
         self._path = path
 
         # Getting the path of the firmadyne directory
         currentFolder = os.path.dirname(os.path.realpath(__file__))
-        self._firmadynePath = os.path.join(currentFolder, "fat/firmadyne")
-        self._resetFilePath = os.path.join(currentFolder, "fat/reset.py")
+        self._fatPath = os.path.join(currentFolder, "fat")
+        self._firmadynePath = os.path.join(self.fatPath, "firmadyne")
+        self._resetFilePath = os.path.join(self.fatPath, "reset.py")
 
         self._sudoPass = ""
 
-        # Resetting the emulator
-        self._reset()
         self._imageId = None
         self._arch = None
 
@@ -26,9 +25,33 @@ class Firmware:
         self._interfaces = None
         self._isEmulated = False
 
+        # Making sure firmadyne is installed
+        self._installFAT()
+
     @property
     def path(self):
+        if self._path is None:
+            raise OSError("No firmware file specified")
         return self._path
+
+    @property
+    def fatPath(self):
+        return self._fatPath
+
+    @path.setter
+    def path(self, value):
+        self._path = value
+
+    def _installFAT(self):
+        # Checking if firmadyne and binwalk are installed
+        if not os.path.isdir(self.firmadynePath) or not os.path.isdir(os.path.join(self.fatPath, "binwalk")):
+            # Installing firmadyne
+            print("[+] Installing firmadyne...")
+            setupCmd = os.path.join(self.fatPath, "setup.sh")
+            setupArgs = ["--", setupCmd]
+            child = pexpect.spawn("sudo", setupArgs, timeout=None, encoding="utf8", cwd=self.fatPath)
+            child.logfile = sys.stdout
+            child.expect_exact("Firmware Analysis Toolkit installed successfully!")
 
     @property
     def imageId(self):
@@ -47,8 +70,8 @@ class Firmware:
         return self._sudoPass
 
     @sudoPass.setter
-    def sudoPass(self, sudoPass):
-        self._sudoPass = sudoPass
+    def sudoPass(self, value):
+        self._sudoPass = value
 
     def _getNextUnusedId(self):
         for i in range(1, 1000):
@@ -58,8 +81,6 @@ class Firmware:
 
     def _reset(self):
         print("[+] Resetting the emulator... (FAT)")
-        # result = subprocess.run(["sudo", self._resetFilePath], check=True, capture_output=True)
-        # print captured output from subprocess
         print("[+] Cleaning previous images and created files by firmadyne")
         child = pexpect.spawn("/bin/sh", ["-c", "sudo rm -rf " + os.path.join(self.firmadynePath, "images/*.tar.gz")])
         child.sendline(self.sudoPass)
@@ -69,7 +90,6 @@ class Firmware:
         child.sendline(self.sudoPass)
         child.expect_exact(pexpect.EOF)
         print("[+] All done. Go ahead and run fat.py to continue firmware analysis")
-        # print(result.stdout.decode("utf8"))
 
     def _extract(self):
         # image_id = run_extractor(self.path)
@@ -183,6 +203,9 @@ class Firmware:
         self._isEmulated = True
 
     def emulate(self):
+        # Resetting the emulator
+        self._reset()
+        # Getting the image ID
         self._imageId = self._extract()
 
         if self.imageId == "":

@@ -1,6 +1,5 @@
 from flask import Flask, request, redirect
 from flask import render_template
-import os
 
 from src.modules.website.flask import WebServer
 from src.modules.website.utils import FileHandler
@@ -10,10 +9,10 @@ from src.modules.emulation.firmware import Firmware
 fileHandler = FileHandler("/app/uploads")
 
 # Initialize the firmware "handler"
-firmware = Firmware(fileHandler.getPath())
+firmware = Firmware()
 
 # Initialize the web server (flask)
-webServer = WebServer(fileHandler, firmware, host="192.168.2.183")
+webServer = WebServer(fileHandler, firmware, host="0.0.0.0")
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -46,26 +45,23 @@ def indexPost():
 
     if file and fileHandler.isAllowedExtention(file.filename.lower()):
         # Delete all the files from the upload folder
-        fileHandler.deleteAllFirmwareFiles()
-        # Secure the filename
-        filename = FileHandler.getSecureFilename(file.filename)
+        fileHandler.deleteAllFiles()
         # Save the file in the uploads folder
-        file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-        # Set the filename
-        fileHandler.filename = filename
+        fileHandler.saveFile(file)
+
         results["subject"] = "File uploaded"
         results["success"] = True
 
         try:
+            # If all the checks ran successfully, display the firmware path
+            results["firmwarePath"] = fileHandler.filename
             # If the file is a zip file, extract it
             if fileHandler.isZip():
                 fileHandler.extractZip()
                 results["subject"] = "File uploaded and extracted"
-
         except Exception as e:
             results["subject"] = "Error: " + str(e)
             results["success"] = False
-
     else:
         results["subject"] = "File not allowed"
 
@@ -74,6 +70,7 @@ def indexPost():
 
 @app.post('/run')
 def runAppPost():
+    firmware.path = fileHandler.getPath()
     result = firmware.emulate()
     return render_template("index.html", subject=result)
 
