@@ -14,7 +14,6 @@ class Firmware:
         currentFolder = os.path.dirname(os.path.realpath(__file__))
         self._fatPath = os.path.join(currentFolder, "fat")
         self._firmadynePath = os.path.join(self.fatPath, "firmadyne")
-        self._resetFilePath = os.path.join(self.fatPath, "reset.py")
 
         self._sudoPass = ""
 
@@ -27,6 +26,8 @@ class Firmware:
 
         # Making sure firmadyne is installed
         self._installFAT()
+        # TODO: Check for any tap interfaces, and delete them if they exist
+        # TODO: "sudo ip link delete tap*" or something like that
 
     @property
     def path(self):
@@ -53,6 +54,22 @@ class Firmware:
             child.logfile = sys.stdout
             child.expect_exact("Firmware Analysis Toolkit installed successfully!")
 
+    def _reset(self):
+        print("[+] Resetting the emulator... (FAT)")
+        print("[+] Cleaning previous images and created files by firmadyne")
+        child = pexpect.spawn("/bin/sh", ["-c", "sudo rm -rf " + os.path.join(self.firmadynePath, "images/*.tar.gz")])
+        child.sendline(self.sudoPass)
+        child.expect_exact(pexpect.EOF)
+
+        child = pexpect.spawn("/bin/sh", ["-c", "sudo rm -rf " + os.path.join(self.firmadynePath, "scratch/*")])
+        child.sendline(self.sudoPass)
+        child.expect_exact(pexpect.EOF)
+
+        # child = pexpect.spawn("sudo", [os.path.join(self.firmadynePath, "scripts/delete.sh")], timeout=None, encoding="utf8")
+        # child.sendline(self.sudoPass)
+        # child.logfile = sys.stdout
+        # child.expect_exact(pexpect.EOF)
+        print("[+] All done. You can now start a new emulation")
     @property
     def imageId(self):
         return self._imageId
@@ -78,18 +95,6 @@ class Firmware:
             if not os.path.isdir(os.path.join(self.firmadynePath, "scratch", str(i))):
                 return str(i)
         return ""
-
-    def _reset(self):
-        print("[+] Resetting the emulator... (FAT)")
-        print("[+] Cleaning previous images and created files by firmadyne")
-        child = pexpect.spawn("/bin/sh", ["-c", "sudo rm -rf " + os.path.join(self.firmadynePath, "images/*.tar.gz")])
-        child.sendline(self.sudoPass)
-        child.expect_exact(pexpect.EOF)
-
-        child = pexpect.spawn("/bin/sh", ["-c", "sudo rm -rf " + os.path.join(self.firmadynePath, "scratch/*")])
-        child.sendline(self.sudoPass)
-        child.expect_exact(pexpect.EOF)
-        print("[+] All done. Go ahead and run fat.py to continue firmware analysis")
 
     def _extract(self):
         # image_id = run_extractor(self.path)
@@ -167,6 +172,9 @@ class Firmware:
         child.expect_exact("Interfaces:", timeout=None)
         interfaces = child.readline().strip().decode("utf8")
         print("[+] Network interfaces:", interfaces)
+
+        # Assign the interfaces
+        self._interfaces = interfaces
         child.expect_exact(pexpect.EOF)
 
     def _finalRun(self, qemu_dir=None):
@@ -187,20 +195,37 @@ class Firmware:
             cmd = 'sed -i "/QEMU=/c\QEMU={0}/qemu-system-{1}" "{2}"'.format(qemu_dir, arch, runsh_path)
             pexpect.run(cmd)
 
-        print("[+] All set! Press ENTER to run the firmware...")
-        input("[+] When running, press Ctrl + A X to terminate qemu")
+        # print("[+] All set! Press ENTER to run the firmware...")
+        # input("[+] When running, press Ctrl + A X to terminate qemu")
+        print("[+] Running the firmware...")
 
         print("[+] Command line:", runsh_path)
-        run_cmd = ["--", runsh_path]
-        child = pexpect.spawn("sudo", run_cmd, cwd=self.firmadynePath)
-        child.sendline(self.sudoPass)
-        # Send enter to start the emulation
-        child.sendline()
-        child.interact()
 
-        child.logfile_read = sys.stdout
+        # ORIGINAL WAY FAT WORKS =============================================================================
+        # run_cmd = ["--", runsh_path]
+        # child = pexpect.spawn("sudo", run_cmd, cwd=self.firmadynePath, timeout=None, encoding="ISO-8859-1")
+        # child.sendline(self.sudoPass)
+        # # child.interact()
+        # child.logfile = sys.stdout
+        # child.expect(["Welcome to SDK", "Have a lot of fun", "login:"])
+        # # Leave the child running
+        # self._emulatingProcess = child
+        # child.close()
+        # =====================================================================================================
+
+        # subprocess (Popen) allows to run the firmware in a separate process (background)
+        child = subprocess.Popen(["sudo", runsh_path], cwd=self.firmadynePath, stdout=subprocess.PIPE, encoding="ISO-8859-1")
+
+        # Wait for the process to finish
+        while True:
+            successfulPhrases = ["Welcome to SDK", "Have a lot of fun", "login:"]
+            line = child.stdout.readline()
+            if any(phrase in line for phrase in successfulPhrases):
+                break
+
         # Emulation is completed
         self._isEmulated = True
+        print("[+] Emulation completed")
 
     def emulate(self):
         # Resetting the emulator
