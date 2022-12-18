@@ -1,16 +1,3 @@
-# def _pdf(self):
-#             with open("python", "rsf.py") as f:
-#                 data = f.read()
-#             run(['tar', 'xzf', '-'], input=data)
-#
-#             pdf = FPDF(orientation='P', unit='mm', format='A4')
-#             pdf.add_page()
-#             pdf.set_font('Arial', 'B', 16)
-#             pdf.cell(200, 10, text="data", ln=1, align='C')
-#             pdf.output('pdf/Report.pdf')
-#
-
-
 #
 # class PDF:
 #     def __init__(self, path):
@@ -68,7 +55,6 @@ import os
 
 
 import os
-import subprocess
 import os.path
 from subprocess import run
 
@@ -84,15 +70,15 @@ class PDF:
     def addContent(self, content):
         self._inputReceived.append(content)
 
-    def _pdf(self,content):
+    def _pdf(self, content):
         pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
         pdf.set_font('Arial', 'B', 16)
         pdf.cell(200, 10, ln=1, txt=content, align='C')
         pdf.output('pdf/Report.pdf')
 
-    def run(self):
-        self._pdf()
+    def run(self, content):
+        self._pdf(content)
 
 
 pdfgenerator = PDF()
