@@ -63,6 +63,8 @@ class RouterSploit:
 
         self.sudoPass = ""
 
+        self.ip = "192.168.1.1"
+
     @property
     def autopwn(self):
         return self._autopwn
@@ -70,6 +72,15 @@ class RouterSploit:
     @property
     def path(self):
         return self._path
+
+    @property
+    def ip(self):
+        return self._ip
+
+    @ip.setter
+    def ip(self, ip):
+        self._ip = ip
+
 
     def _autopwn(self):
         print("[+] Running the scanner....(RouterSploit)")
@@ -82,6 +93,26 @@ class RouterSploit:
         child.sendline(self.sudoPass)
         print("[+] Show options")
         child.expect_exact(pexpect.EOF)
+
+        child = pexpect.spawn("/bin/sh", ["set threads 20"], cwd=self._routersploitPath)
+        child.sendline(self.sudoPass)
+        print("[+] Set threads 20")
+        child.sendline(self.sudoPass)
+        child.expect_exact(pexpect.EOF)
+
+
+        child = pexpect.spawn("/bin/sh", ["set target ip"], cwd=self._routersploitPath)
+        child.sendline(self.sudoPass)
+        print("[+] Set target ip" + self.ip)
+        child.sendline(self.sudoPass)
+        child.expect_exact(pexpect.EOF)
+
+        child = pexpect.spawn("/bin/sh", ["run"], cwd=self._routersploitPath)
+        child.sendline(self.sudoPass)
+        print("[+] Run")
+        child.sendline(self.sudoPass)
+        child.expect_exact(pexpect.EOF)
+
 
     def run(self):
         self._autopwn()
