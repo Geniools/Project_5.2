@@ -5,6 +5,8 @@ from src.modules.website.flask import WebServer
 from src.modules.website.utils import FileHandler
 from src.modules.emulation.firmware import Firmware
 
+from src.modules.scanning.nmap import Nmap
+
 # Initialize the file handler
 fileHandler = FileHandler("/app/uploads")
 
@@ -19,6 +21,9 @@ app = Flask(__name__)
 
 # Configure the Flask application
 app.config['UPLOAD_FOLDER'] = fileHandler.UPLOAD_FOLDER
+
+# Initialize the tools used for scanning/pen-testing
+nmap = Nmap()
 
 
 # Handle the root path (get request)
@@ -79,6 +84,15 @@ def runAppPost():
 def runAppGet():
     return redirect("/")
 
+@app.post('/scan')
+def scanFirmwareNmap():
+    # Setting the ip address of the emulated device
+    nmap.ip = firmware.getIpAddress()
+    nmap.scanPortsLite()
+
+@app.get('/scan')
+def scanFirmwareNmapGet():
+    return redirect("/")
 
 def main():
     # Use reloader will reload the app when changes are made (but will run the app twice, which results often in errors)
