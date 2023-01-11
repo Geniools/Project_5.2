@@ -1,3 +1,6 @@
 [submodule "src/modules/emulation/fat"]
 	path = src/modules/emulation/fat
 	url = https://github.com/attify/firmware-analysis-toolkit
+[submodule "src/modules/scanning/routersploit"]
+	path = src/modules/scanning/routersploit
+	url = https://github.com/threat9/routersploit

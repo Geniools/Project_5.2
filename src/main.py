@@ -7,8 +7,9 @@ from src.modules.website.flask import WebServer
 from src.modules.website.utils import FileHandler
 from src.modules.emulation.firmware import Firmware
 
-from src.modules.scanning.nmap import Nmap
 from src.modules.output.pdf_generator import PDFGenerator
+from src.modules.scanning.nmap import Nmap
+from src.modules.scanning.routersploitModule import RouterSploit
 
 # Initialize the file handler
 fileHandler = FileHandler("/app/uploads")
@@ -28,6 +29,7 @@ app.config['UPLOAD_FOLDER'] = fileHandler.UPLOAD_FOLDER
 # Initialize the tools used for scanning/pen-testing
 output = PDFGenerator()
 nmap = Nmap()
+routersploit = RouterSploit()
 
 
 # Handle the root path (get request)
@@ -39,7 +41,7 @@ def indexGet():
 
 # Handle the POST request for the index page
 @app.post('/')
-def indexPost():
+def uploadFirmware():
     results = webServer.getContent()
 
     # Check if the request contains a file
@@ -95,13 +97,24 @@ def runAppGet():
     return redirect("/")
 
 
+# Uses all the modules that scan the emulated firmware and adds it to the pdf (as results)
 @app.post('/scan')
 def scanFirmwareNmap():
     results = webServer.getContent()
-    # Setting the ip address of the emulated device
+    if not firmware.isEmulated:
+        results["subject"] = "Firmware is not emulated!"
+        return render_template("index.html", **results)
+
+    # NMAP
     nmap.ip = firmware.ipAddress
     results["content"] = nmap.run()
     output.addContent(nmap.results)
+
+    # ROUTERSPLOIT
+    # routersploit.ip = firmware.ipAddress
+    # results["content"] = routersploit.run()
+    # output.addContent(routersploit.results)
+
     return render_template("index.html", **results)
 
 
@@ -110,7 +123,7 @@ def scanFirmwareNmapGet():
     return redirect("/")
 
 
-@app.get('/status')
+@app.route('/status')
 def getStatus():
     if Module.STATUS is None:
         return "Idle"
@@ -118,7 +131,7 @@ def getStatus():
         return Module.STATUS
 
 
-@app.get('/download')
+@app.route('/download')
 def download():
     response = make_response(output.run())
     response.headers.set('Content-Disposition', 'attachment', filename=output.pdfName)
