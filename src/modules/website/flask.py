@@ -29,11 +29,13 @@ class WebServer:
             "success": False,
             "subject": None,
             "firmwarePath": None,
+            "isEmulated": self.firmware.isEmulated,
         }
 
         if self.fileHandler.isFileAvailable():
             results["firmwarePath"] = self.fileHandler.filename
-            results["subject"] = "A firmware file is already uploaded! But you can upload another one (and the old one will be deleted)."
+            results["subject"] = "A firmware file is already uploaded! But you can upload another one (and the old one " \
+                                 "will be deleted). "
             results["success"] = True
 
         return results

@@ -3,10 +3,15 @@ import os.path
 import sys
 import pexpect
 import subprocess
+import re
+
+from src.modules.module import Module
 
 
-class Firmware:
+class Firmware(Module):
     def __init__(self, path=None):
+        super().__init__("Firmware")
+
         # The path to the file (the firmware file)
         self._path = path
 
@@ -26,8 +31,8 @@ class Firmware:
 
         # Making sure firmadyne is installed
         self._installFAT()
-        # TODO: Check for any tap interfaces, and delete them if they exist
-        # TODO: "sudo ip link delete tap*" or something like that
+        # Deleting any interfaces from any old emulations
+        self._resetTapInterfaces()
 
     @property
     def path(self):
@@ -54,6 +59,12 @@ class Firmware:
             child.logfile = sys.stdout
             child.expect_exact("Firmware Analysis Toolkit installed successfully!")
 
+    def _resetTapInterfaces(self):
+        print("[+] Resetting tap interfaces...")
+        # TODO: An tap interface might be named differently
+        tapInterfaceName = "tap1_0"
+        subprocess.Popen(["sudo", "ip", "link", "delete", tapInterfaceName], stdout=sys.stdout)
+
     def _reset(self):
         print("[+] Resetting the emulator... (FAT)")
         print("[+] Cleaning previous images and created files by firmadyne")
@@ -70,6 +81,7 @@ class Firmware:
         # child.logfile = sys.stdout
         # child.expect_exact(pexpect.EOF)
         print("[+] All done. You can now start a new emulation")
+
     @property
     def imageId(self):
         return self._imageId
@@ -214,7 +226,8 @@ class Firmware:
         # =====================================================================================================
 
         # subprocess (Popen) allows to run the firmware in a separate process (background)
-        child = subprocess.Popen(["sudo", runsh_path], cwd=self.firmadynePath, stdout=subprocess.PIPE, encoding="ISO-8859-1")
+        child = subprocess.Popen(["sudo", runsh_path], cwd=self.firmadynePath, stdout=subprocess.PIPE,
+                                 encoding="ISO-8859-1")
 
         # Wait for the process to finish
         while True:
@@ -227,26 +240,36 @@ class Firmware:
         self._isEmulated = True
         print("[+] Emulation completed")
 
-    def emulate(self):
+    def run(self):
+        Module.STATUS = "Initialized"
         # Resetting the emulator
         self._reset()
+        Module.STATUS = "Extracting the firmware"
         # Getting the image ID
         self._imageId = self._extract()
 
         if self.imageId == "":
             result = "Image extraction failed"
         else:
+            Module.STATUS = "Identifying the architecture"
             self._identifyArch()
+            Module.STATUS = "Making the image"
             self._makeImage()
+            Module.STATUS = "Inferring the network"
             self._inferNetwork()
+            Module.STATUS = "Running the emulation"
             self._finalRun()
-
+            Module.STATUS = "Emulation completed"
             result = "Image extraction successful"
 
         return result
 
-    def getIpAddress(self):
-        return self._interfaces[0]
+    @property
+    def ipAddress(self):
+        ip = re.findall(r'[0-9]+(?:\.[0-9]+){3}', self._interfaces)[0]
+        print(f"[+] Getting the IP address: {ip}")
+        return ip
 
+    @property
     def isEmulated(self):
         return self._isEmulated

@@ -1,11 +1,14 @@
 from flask import Flask, request, redirect
-from flask import render_template
+from flask import render_template, make_response
+
+from src.modules.module import Module
 
 from src.modules.website.flask import WebServer
 from src.modules.website.utils import FileHandler
 from src.modules.emulation.firmware import Firmware
 
 from src.modules.scanning.nmap import Nmap
+from src.modules.output.pdf_generator import PDFGenerator
 
 # Initialize the file handler
 fileHandler = FileHandler("/app/uploads")
@@ -23,6 +26,7 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = fileHandler.UPLOAD_FOLDER
 
 # Initialize the tools used for scanning/pen-testing
+output = PDFGenerator()
 nmap = Nmap()
 
 
@@ -75,24 +79,52 @@ def indexPost():
 
 @app.post('/run')
 def runAppPost():
-    firmware.path = fileHandler.getPath()
-    result = firmware.emulate()
-    return render_template("index.html", subject=result)
+    results = webServer.getContent()
+    if not firmware.isEmulated:
+        firmware.path = fileHandler.getPath()
+        results["subject"] = firmware.run()
+        results["isEmulated"] = firmware.isEmulated
+        return render_template("index.html", **results)
+    else:
+        results["subject"] = "Firmware is already emulated!"
+        return render_template("index.html", **results)
 
 
 @app.get('/run')
 def runAppGet():
     return redirect("/")
 
+
 @app.post('/scan')
 def scanFirmwareNmap():
+    results = webServer.getContent()
     # Setting the ip address of the emulated device
-    nmap.ip = firmware.getIpAddress()
-    nmap.scanPortsLite()
+    nmap.ip = firmware.ipAddress
+    results["content"] = nmap.run()
+    output.addContent(nmap.results)
+    return render_template("index.html", **results)
+
 
 @app.get('/scan')
 def scanFirmwareNmapGet():
     return redirect("/")
+
+
+@app.get('/status')
+def getStatus():
+    if Module.STATUS is None:
+        return "Idle"
+    else:
+        return Module.STATUS
+
+
+@app.get('/download')
+def download():
+    response = make_response(output.run())
+    response.headers.set('Content-Disposition', 'attachment', filename=output.pdfName)
+    response.headers.set('Content-Type', 'application/pdf')
+    return response
+
 
 def main():
     # Use reloader will reload the app when changes are made (but will run the app twice, which results often in errors)

@@ -1,6 +1,3 @@
 [submodule "src/modules/emulation/fat"]
 	path = src/modules/emulation/fat
 	url = https://github.com/attify/firmware-analysis-toolkit
-[submodule "modules/pyfpdf"]
-	path = modules/pyfpdf
-	url = https://github.com/reingart/pyfpdf

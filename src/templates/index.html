@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Awesome app</title>
-    <link rel="stylesheet" type="../css/style.css" href= "{{ url_for('static',filename='css/style.css') }}">
+    <link rel="stylesheet" type="../css/style.css" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='js/status.js') }}"></script>
 </head>
 <body>
 
@@ -13,20 +15,39 @@
     <h1>Upload your firmware file right here!</h1>
 {% endif %}
 
+<div class="content">
+    {% if content %}
+        {{ content }}
+    {% endif %}
+</div>
+
 <form action="/" method="post" enctype="multipart/form-data">
     <input type="file" name="file">
     <input type="submit" value="Upload">
 </form>
 
 {% if success %}
-    <form action="/run" method="post">
-        <input type="submit" value="Run">
+    {% if isEmulated %}
+        <form action="/scan" method="post">
+            <input type="submit" value="Scan">
+        </form>
+    {% else %}
+        <form action="/run" method="post">
+            <input type="submit" value="Run">
+        </form>
+    {% endif %}
+    <form action="/download">
+        <input type="submit" value="Download report">
     </form>
 {% endif %}
 
 {% if firmwarePath %}
     <p>File: {{ firmwarePath }}</p>
 {% endif %}
+
+<div>
+    Status: <span class="status"></span>
+</div>
 
 </body>
 </html>
