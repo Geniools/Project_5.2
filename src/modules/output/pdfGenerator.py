@@ -11,9 +11,8 @@ class PDFGenerator(Module):
         self._inputReceived = []
 
     def addContent(self, content):
-        try:
-            iter(content)
-        except TypeError:
+        print(content, type(content))
+        if type(content) is not dict:
             self._inputReceived.append(content)
         else:
             for item in content:
@@ -22,8 +21,12 @@ class PDFGenerator(Module):
     def run(self):
         self._pdf.add_page()
         self._pdf.set_font('Arial', 'B', 16)
-        self._pdf.cell(200, 10, ln=1, txt=str(" ".join(self._inputReceived)), align='C')
+        print(self._inputReceived)
+        self._pdf.cell(200, 10, ln=1, txt=str(" ".join(str(e) for e in self._inputReceived)), align='C')
         return self._pdf.output(dest='S').encode('latin-1')
+
+    def results(self) -> str:
+        return str(self._inputReceived)
 
     @property
     def pdfName(self):

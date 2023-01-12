@@ -7,9 +7,10 @@ from src.modules.website.flask import WebServer
 from src.modules.website.utils import FileHandler
 from src.modules.emulation.firmware import Firmware
 
-from src.modules.output.pdf_generator import PDFGenerator
-from src.modules.scanning.nmap import Nmap
+from src.modules.output.pdfGenerator import PDFGenerator
+from src.modules.scanning.nmapModule import Nmap
 from src.modules.scanning.routersploitModule import RouterSploit
+from src.modules.scanning.metasploitModule import Metasploit
 
 # Initialize the file handler
 fileHandler = FileHandler("/app/uploads")
@@ -30,6 +31,7 @@ app.config['UPLOAD_FOLDER'] = fileHandler.UPLOAD_FOLDER
 output = PDFGenerator()
 nmap = Nmap()
 routersploit = RouterSploit()
+metasploit = Metasploit()
 
 
 # Handle the root path (get request)
@@ -114,6 +116,11 @@ def scanFirmwareNmap():
     # routersploit.ip = firmware.ipAddress
     # results["content"] = routersploit.run()
     # output.addContent(routersploit.results)
+
+    # METASPLOIT
+    metasploit.ip = firmware.ipAddress
+    results["content"] = metasploit.run()
+    output.addContent(metasploit.results)
 
     return render_template("index.html", **results)
 

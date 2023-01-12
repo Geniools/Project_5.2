@@ -31,8 +31,6 @@ class Firmware(Module):
 
         # Making sure firmadyne is installed
         self._installFAT()
-        # Deleting any interfaces from any old emulations
-        self._resetTapInterfaces()
 
     @property
     def path(self):
@@ -182,6 +180,7 @@ class Firmware(Module):
             child = pexpect.spawn(network_cmd, network_args, cwd=self.firmadynePath)
 
         child.expect_exact("Interfaces:", timeout=None)
+        print(child.readline())
         interfaces = child.readline().strip().decode("utf8")
         print("[+] Network interfaces:", interfaces)
 
@@ -231,9 +230,13 @@ class Firmware(Module):
 
         # Wait for the process to finish
         while True:
-            successfulPhrases = ["Welcome to SDK", "Have a lot of fun", "login:"]
-            line = child.stdout.readline()
-            if any(phrase in line for phrase in successfulPhrases):
+            # successfulPhrases = ["Welcome to SDK", "Have a lot of fun", "login:"]
+            # line = child.stdout.readline()
+            # if any(phrase in line for phrase in successfulPhrases):
+            #     break
+            online = os.system("ping -c 1 " + self.ipAddress)
+            if online == 0:
+                print("[+] Device is online")
                 break
 
         # Emulation is completed
@@ -244,6 +247,8 @@ class Firmware(Module):
         Module.STATUS = "Initialized"
         # Resetting the emulator
         self._reset()
+        # Deleting any interfaces from any old emulations
+        self._resetTapInterfaces()
         Module.STATUS = "Extracting the firmware"
         # Getting the image ID
         self._imageId = self._extract()

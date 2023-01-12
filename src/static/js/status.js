@@ -13,5 +13,5 @@ $(() => {
     updateStatus();
     setInterval(() => {
         updateStatus();
-    }, 3500);
+    }, 2000);
 })

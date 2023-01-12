@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 
+# This class must be inherited by all modules
 class Module(ABC):
     STATUS: str = None
 
@@ -10,6 +11,10 @@ class Module(ABC):
     @abstractmethod
     def run(self) -> str:
         pass
+
+    @property
+    def results(self) -> str:
+        return "This module has no results (or not implemented)"
 
     @property
     def name(self) -> str:
